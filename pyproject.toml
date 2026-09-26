@@ -1,0 +1,30 @@
+[project]
+name = "hydrorefuel-refueling-control"
+version = "1.0.0"
+description = "sequencing and interlock kernel"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.setuptools]
+packages = [
+    "hydrorefuel",
+    "hydrorefuel.ns",
+    "hydrorefuel.store",
+    "hydrorefuel.audit",
+    "hydrorefuel.truck",
+    "hydrorefuel.vent",
+    "hydrorefuel.comp",
+    "hydrorefuel.buffer",
+    "hydrorefuel.cool",
+    "hydrorefuel.flow",
+    "hydrorefuel.disp",
+    "hydrorefuel.leak",
+    "hydrorefuel.queue",
+    "hydrorefuel.sequence",
+    "hydrorefuel.console",
+]

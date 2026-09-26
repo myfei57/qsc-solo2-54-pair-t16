@@ -1,0 +1,16 @@
+# 运行期与构建产物
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+var/
+
+# 虚拟环境
+.venv/
+venv/
+
+# 编辑器
+.idea/
+.vscode/

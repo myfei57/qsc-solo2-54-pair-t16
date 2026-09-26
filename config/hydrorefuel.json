@@ -1,0 +1,60 @@
+{
+  "station": {
+    "name": "refueling-control",
+    "storage_root": "var/state"
+  },
+  "limits": {
+    "truck": {
+      "hose_pressure_max_mpa": 25.0,
+      "vent_confirm_mpa": 1.5,
+      "vent_timeout_s": 90.0,
+      "unload_rate_kg_per_min": 6.0
+    },
+    "vent": {
+      "orifice_mm": 6.0,
+      "rate_coeff": 0.9,
+      "ambient_mpa": 0.1,
+      "latch_travel_mm": 40.0
+    },
+    "comp": {
+      "inlet_min_mpa": 3.0,
+      "outlet_target_mpa": 43.0,
+      "ramp_mpa_per_s": 0.8,
+      "surge_band_mpa": 1.2,
+      "min_flow_kg_per_min": 1.5
+    },
+    "buffer": {
+      "target_pressure_mpa": 42.0,
+      "pressure_tolerance_mpa": 1.5,
+      "baseline_ttl_s": 3600.0,
+      "capacity_kg": 350.0
+    },
+    "cool": {
+      "target_temp_c": -40.0,
+      "temp_band_c": 3.0,
+      "cool_rate_c_per_s": 0.6,
+      "precool_hold_s": 20.0
+    },
+    "flow": {
+      "step_target_kg": 1.8,
+      "step_tolerance_kg": 0.15,
+      "max_rate_kg_per_min": 3.6,
+      "min_rate_kg_per_min": 0.4
+    },
+    "disp": {
+      "nozzle_seat_travel_mm": 55.0,
+      "seat_timeout_s": 15.0,
+      "max_line_pressure_mpa": 44.0,
+      "isolate_lead_s": 2.0
+    },
+    "leak": {
+      "threshold_ppm": 4000.0,
+      "sample_window_s": 5.0,
+      "hold_s": 30.0
+    },
+    "queue": {
+      "max_waiting": 12,
+      "confirm_timeout_s": 45.0
+    }
+  }
+}
