@@ -23,6 +23,13 @@ class VentLatch:
     def travel_mm(self) -> float:
         return self._travel_mm
 
+    def update_travel(self, travel_mm: float) -> None:
+        """运行期替换闩锁行程。"""
+
+        if travel_mm <= 0:
+            raise ValueError("闩锁行程必须为正")
+        self._travel_mm = float(travel_mm)
+
     def engage(self) -> float:
         """闩锁咬合，返回咬合后的行程。"""
 

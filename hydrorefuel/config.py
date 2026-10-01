@@ -350,7 +350,10 @@ def config_to_mapping(cfg: StationConfig) -> dict:
     """把配置还原成可打印的映射。"""
 
     return {
-        "station": {"name": cfg.name, "storage_root": cfg.storage_root},
+        "station": {
+            "name": cfg.name,
+            "storage_root": cfg.storage_root,
+        },
         "limits": {
             "truck": {
                 "hose_pressure_max_mpa": cfg.truck.hose_pressure_max_mpa,

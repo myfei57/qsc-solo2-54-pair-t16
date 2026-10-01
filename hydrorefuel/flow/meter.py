@@ -22,6 +22,11 @@ class MassFlowMeter:
     def limits(self) -> FlowLimits:
         return self._limits
 
+    def update_limits(self, limits: FlowLimits) -> None:
+        """运行期替换流量计限值。"""
+
+        self._limits = limits
+
     def commit(self, rate_kg_per_min: float, dt: float) -> float:
         """按速率推进一个步长，返回累计质量。"""
 

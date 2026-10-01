@@ -21,6 +21,11 @@ class FillQueue:
     def limited(self) -> QueueLimits:
         return self._limits
 
+    def update_limits(self, limits: QueueLimits) -> None:
+        """运行期替换队列限值。"""
+
+        self._limits = limits
+
     def enqueue(self, vehicle: str, now: float) -> int:
         """把车辆加入队尾，返回其排队位次。"""
 

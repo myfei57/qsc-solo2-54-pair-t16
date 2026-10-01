@@ -57,6 +57,9 @@ class Api:
         add("GET", "/api/store", self._store)
         add("GET", "/api/timeline", self._timeline)
         add("GET", "/api/journal", self._journal)
+        add("GET", "/api/config", lambda params, body: self._platform.config_status())
+        add("GET", "/api/config/{category}", self._config_category)
+        add("POST", "/api/config/{category}", self._change_config)
         add("POST", "/api/step", self._step)
         add("POST", "/api/unload", self._unload)
         add("POST", "/api/pressurize", self._pressurize)
@@ -90,6 +93,9 @@ class Api:
             # 控制台拒绝的动作也要留痕，便于巡检区分"谁触发了哪条联锁"。
             self._platform.note_error(error)
             return 409, {"error": type(error).__name__, **error.as_record()}
+        if isinstance(payload, dict) and payload.get("status") == "rejected":
+            status = 400 if payload.get("rejection_reason") == "invalid_request" else 409
+            return status, payload
         return 200, payload
 
     def _namespace(self, params: dict, body: dict) -> dict:
@@ -138,6 +144,36 @@ class Api:
         if segment is not None:
             payload["records"] = self._platform.audit.replay_segment(int(segment))
         return payload
+
+    def _config_category(self, params: dict, body: dict) -> dict:
+        status = self._platform.config_status()
+        category = str(params.get("category", ""))
+        if category not in status["categories"]:
+            raise HydroError(f"未知配置类别 {category!r}", component="config")
+        return {"category": status["categories"][category]}
+
+    def _change_config(self, params: dict, body: dict) -> dict:
+        missing = [
+            key
+            for key in ("expected_version", "submitted_at", "actor", "reason")
+            if key not in body
+        ]
+        if missing:
+            return {
+                "accepted": False,
+                "status": "rejected",
+                "rejection_reason": "invalid_request",
+                "message": f"缺少必填字段: {', '.join(missing)}",
+            }
+        return self._platform.change_config(
+            str(params.get("category", "")),
+            body.get("values", body.get("value", {})),
+            expected_version=body["expected_version"],
+            submitted_at=body["submitted_at"],
+            actor=body["actor"],
+            reason=body["reason"],
+            request_id=body.get("request_id"),
+        )
 
     def _step(self, params: dict, body: dict) -> dict:
         return self._platform.cycle(dt=_as_float(body, "dt", 1.0))

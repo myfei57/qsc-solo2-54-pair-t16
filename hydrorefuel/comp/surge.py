@@ -17,6 +17,11 @@ class SurgeGuard:
         self._limits = limits
         self._trips = 0
 
+    def update_limits(self, limits: CompressorLimits) -> None:
+        """运行期替换喘振限值。"""
+
+        self._limits = limits
+
     def evaluate(self, flow_kg_per_min: float) -> dict:
         """按入口流量给出喘振结论。"""
 

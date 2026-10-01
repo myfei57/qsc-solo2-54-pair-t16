@@ -22,6 +22,11 @@ class FlowStep:
     def target_kg(self) -> float:
         return self._limits.step_target_kg
 
+    def update_limits(self, limits: FlowLimits) -> None:
+        """运行期替换阶梯限值。"""
+
+        self._limits = limits
+
     def add(self, mass_kg: float) -> float:
         """往本阶梯累计一段质量，返回本阶梯累计量。"""
 

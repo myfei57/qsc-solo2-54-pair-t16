@@ -22,6 +22,11 @@ class BufferBank:
     def limits(self) -> BufferLimits:
         return self._limits
 
+    def update_limits(self, limits: BufferLimits) -> None:
+        """运行期替换瓶组限值。"""
+
+        self._limits = limits
+
     @property
     def pressure_mpa(self) -> float:
         return self._pressure_mpa

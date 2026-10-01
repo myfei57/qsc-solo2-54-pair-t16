@@ -24,6 +24,11 @@ class VentValve:
     def limits(self) -> VentLimits:
         return self._limits
 
+    def update_limits(self, limits: VentLimits) -> None:
+        """运行期替换放散限值。"""
+
+        self._limits = limits
+
     def open(self) -> None:
         """打开放散阀。"""
 

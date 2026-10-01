@@ -20,6 +20,7 @@ from .clock import Clock, SystemClock
 from .comp.machine import Compressor
 from .comp.surge import SurgeGuard
 from .config import StationConfig, default_config
+from .config_manager import ConfigManager
 from .cool.precool import Precooler
 from .cool.snapshot import CoolSnapshot
 from .cool.temperature import TemperatureModel
@@ -70,6 +71,8 @@ class Platform:
         store = JsonStore(self.config.storage_root)
         self.store = store
         self.audit = AuditLog(self.clock, self.bus, JsonlJournal(store.root, "audit", segment_limit=512))
+        self.configs = ConfigManager(self.config, self.bus, self.audit, store, self.clock, unit)
+        self.config = self.configs.current_config()
         self.namespaces = NamespaceRegistry(unit)
         self.topology: Topology = build_default_topology()
         self.trend = TrendBuffer(period_s=5.0)
@@ -147,6 +150,66 @@ class Platform:
             "platform_state",
             {"operations": self._operations, "cycles": self._cycles, "unit": self.unit},
         )
+
+    def config_status(self) -> dict:
+        """返回运行期配置、版本、策略和最近拒绝原因。"""
+
+        with self._lock:
+            return self.configs.status()
+
+    def change_config(
+        self,
+        category: str,
+        values: dict,
+        *,
+        expected_version: int,
+        submitted_at: float,
+        actor: str,
+        reason: str,
+        request_id: str | None = None,
+    ) -> dict:
+        """提交一笔带版本号和责任信息的配置变更。"""
+
+        with self._lock:
+            return self.configs.submit(
+                category,
+                values,
+                expected_version=expected_version,
+                submitted_at=submitted_at,
+                actor=actor,
+                reason=reason,
+                request_id=request_id,
+                apply_config=self._apply_config,
+            )
+
+    def _apply_config(self, config: StationConfig) -> None:
+        """把候选配置同步给仍持有限值对象的运行组件。"""
+
+        self.config = config
+        self.truck.update_limits(config.truck)
+        self.vent.update_limits(config.vent)
+        self.vent_latch.update_travel(config.vent.latch_travel_mm)
+        self.compressor.update_limits(config.compressor)
+        self.surge.update_limits(config.compressor)
+        self.bank.update_limits(config.buffer)
+        self.baseline.update_limits(
+            config.buffer.target_pressure_mpa,
+            config.buffer.pressure_tolerance_mpa,
+            config.buffer.baseline_ttl_s,
+        )
+        self.temperature.update_limits(config.cool)
+        self.precooler.update_limits(config.cool)
+        self.meter.update_limits(config.flow)
+        self.flow_step.update_limits(config.flow)
+        self.nozzle.update_seat_travel(config.dispenser.nozzle_seat_travel_mm)
+        self.dispenser.update_limits(config.dispenser)
+        self.setpoint.update_limits(
+            config.buffer.target_pressure_mpa - config.buffer.pressure_tolerance_mpa,
+            config.buffer.target_pressure_mpa + config.buffer.pressure_tolerance_mpa,
+        )
+        self.leak.update_limits(config.leak)
+        self.queue.update_limits(config.queue)
+        self.confirm.update_timeout(config.queue.confirm_timeout_s)
 
     def _record_operation(self, op_id: str, operation: str, report: dict) -> dict:
         """把编排步骤逐条写审计，并记一条汇总事件。"""

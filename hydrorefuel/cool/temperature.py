@@ -22,6 +22,11 @@ class TemperatureModel:
     def limits(self) -> CoolLimits:
         return self._limits
 
+    def update_limits(self, limits: CoolLimits) -> None:
+        """运行期替换预冷限值。"""
+
+        self._limits = limits
+
     @property
     def value_c(self) -> float:
         return self._value_c

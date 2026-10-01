@@ -29,6 +29,11 @@ class Compressor:
     def limits(self) -> CompressorLimits:
         return self._limits
 
+    def update_limits(self, limits: CompressorLimits) -> None:
+        """运行期替换压缩机限值。"""
+
+        self._limits = limits
+
     @property
     def state(self) -> str:
         return self._state

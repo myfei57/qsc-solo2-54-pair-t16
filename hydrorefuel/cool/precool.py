@@ -26,6 +26,11 @@ class Precooler:
     def state(self) -> str:
         return self._state
 
+    def update_limits(self, limits: CoolLimits) -> None:
+        """运行期替换预冷保持限值。"""
+
+        self._limits = limits
+
     @property
     def held_s(self) -> float:
         return self._held_s

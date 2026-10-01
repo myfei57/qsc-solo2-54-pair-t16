@@ -42,6 +42,14 @@ class SetpointArbiter:
     def limits(self) -> tuple[float, float]:
         return (self._min, self._max)
 
+    def update_limits(self, min_mpa: float, max_mpa: float) -> None:
+        """运行期替换设定点允许区间。"""
+
+        if min_mpa >= max_mpa:
+            raise ValueError("设定点下限必须小于上限")
+        self._min = float(min_mpa)
+        self._max = float(max_mpa)
+
     def request(self, writer: str, value_mpa: float, priority: int) -> None:
         """登记一路设定点请求（最高优先级 + 最新提交胜出）。"""
 

@@ -24,6 +24,13 @@ class Confirmation:
     def timeout_s(self) -> float:
         return self._timeout_s
 
+    def update_timeout(self, timeout_s: float) -> None:
+        """运行期替换确认超时时长。"""
+
+        if timeout_s <= 0:
+            raise ValueError("确认超时必须为正")
+        self._timeout_s = float(timeout_s)
+
     def open(self, vehicle: str, now: float) -> None:
         """为车辆发起一次确认。"""
 

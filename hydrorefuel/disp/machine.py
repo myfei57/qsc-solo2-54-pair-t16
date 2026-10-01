@@ -29,6 +29,11 @@ class Dispenser:
     def limits(self) -> DispenserLimits:
         return self._limits
 
+    def update_limits(self, limits: DispenserLimits) -> None:
+        """运行期替换加注机限值。"""
+
+        self._limits = limits
+
     @property
     def state(self) -> str:
         return self._state
