@@ -21,6 +21,11 @@ class LeakDetector:
     def limits(self) -> LeakLimits:
         return self._limits
 
+    def update_limits(self, limits: LeakLimits) -> None:
+        """热更新泄漏限值。"""
+
+        self._limits = limits
+
     def sample(self, concentration_ppm: float) -> dict:
         """记一次浓度采样，返回采样结果。"""
 

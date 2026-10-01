@@ -25,6 +25,13 @@ class Nozzle:
     def seat_travel_mm(self) -> float:
         return self._seat_travel_mm
 
+    def update_seat_travel_mm(self, seat_travel_mm: float) -> None:
+        """热更新落座行程。"""
+
+        if seat_travel_mm <= 0:
+            raise ValueError("落座行程必须为正")
+        self._seat_travel_mm = float(seat_travel_mm)
+
     def seat(self, travel_mm: float) -> bool:
         """按枪位行程尝试落座，返回是否落座到位。"""
 

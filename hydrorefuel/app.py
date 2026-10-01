@@ -20,6 +20,7 @@ from .clock import Clock, SystemClock
 from .comp.machine import Compressor
 from .comp.surge import SurgeGuard
 from .config import StationConfig, default_config
+from .config_change import ConfigChangeManager
 from .cool.precool import Precooler
 from .cool.snapshot import CoolSnapshot
 from .cool.temperature import TemperatureModel
@@ -70,6 +71,10 @@ class Platform:
         store = JsonStore(self.config.storage_root)
         self.store = store
         self.audit = AuditLog(self.clock, self.bus, JsonlJournal(store.root, "audit", segment_limit=512))
+        self.config_changes = ConfigChangeManager.restore(
+            self.config, self.unit, self.clock, self.audit, self.store
+        )
+        self.config = self.config_changes.config
         self.namespaces = NamespaceRegistry(unit)
         self.topology: Topology = build_default_topology()
         self.trend = TrendBuffer(period_s=5.0)
@@ -103,6 +108,7 @@ class Platform:
         self.leak_latch = LeakLatch(self.config.leak.hold_s)
         self.queue = FillQueue(self.config.queue)
         self.confirm = Confirmation(self.config.queue.confirm_timeout_s)
+        self._apply_station_config(self.config)
 
         self._cycles = 0
         self._operations = 0
@@ -367,6 +373,51 @@ class Platform:
                 )
             )
             return {"before_mpa": before, "after_mpa": after, "epoch": self.baseline.epoch}
+
+    def config_snapshot(self, limit: int = 50) -> dict:
+        """返回当前配置、类别版本、并发策略与最近配置决策。"""
+
+        return self.config_changes.snapshot(limit=limit)
+
+    def submit_config_change(self, request: dict) -> dict:
+        """提交一笔配置变更；被并发规则拒绝时返回 409 口径的结论。"""
+
+        with self._lock:
+            outcome = self.config_changes.submit(request)
+            if outcome["accepted"] and not outcome.get("idempotent"):
+                self._apply_station_config(self.config_changes.config)
+            return outcome
+
+    def _apply_station_config(self, config: StationConfig) -> None:
+        """把已通过校验和并发仲裁的配置热应用到各运行对象。"""
+
+        self.config = config
+        self.truck.update_limits(config.truck)
+        self.vent.update_limits(config.vent)
+        self.vent_latch.update_travel_mm(config.vent.latch_travel_mm)
+        self.compressor.update_limits(config.compressor)
+        self.surge.update_limits(config.compressor)
+        self.bank.update_limits(config.buffer)
+        self.baseline.update_limits(
+            config.buffer.target_pressure_mpa,
+            config.buffer.pressure_tolerance_mpa,
+            config.buffer.baseline_ttl_s,
+        )
+        self.setpoint.update_bounds(
+            config.buffer.target_pressure_mpa - config.buffer.pressure_tolerance_mpa,
+            config.buffer.target_pressure_mpa + config.buffer.pressure_tolerance_mpa,
+            config.buffer.target_pressure_mpa,
+        )
+        self.temperature.update_limits(config.cool)
+        self.precooler.update_limits(config.cool)
+        self.meter.update_limits(config.flow)
+        self.flow_step.update_limits(config.flow)
+        self.nozzle.update_seat_travel_mm(config.dispenser.nozzle_seat_travel_mm)
+        self.dispenser.update_limits(config.dispenser)
+        self.leak.update_limits(config.leak)
+        self.leak_latch.update_hold_s(config.leak.hold_s)
+        self.queue.update_limits(config.queue)
+        self.confirm.update_timeout_s(config.queue.confirm_timeout_s)
 
     def disturb_buffer(self, delta_mpa: float) -> dict:
         """模拟一次瓶组压力扰动，返回扰动后的压力。"""
@@ -669,6 +720,7 @@ class Platform:
             "leak_samples": self.leak.samples(),
             "last_audit_ts": self._last_audit_ts,
             "audit": self.audit.summary(),
+            "config": self.config_snapshot(),
         }
 
     def snapshot(self) -> dict:

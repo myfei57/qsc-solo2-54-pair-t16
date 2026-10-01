@@ -42,6 +42,15 @@ class SetpointArbiter:
     def limits(self) -> tuple[float, float]:
         return (self._min, self._max)
 
+    def update_bounds(self, min_mpa: float, max_mpa: float, default_mpa: float) -> None:
+        """热更新压力设定点边界，并把提交值夹到新边界内。"""
+
+        if min_mpa > max_mpa:
+            raise ValueError("设定点下限不得高于上限")
+        self._min = float(min_mpa)
+        self._max = float(max_mpa)
+        self._committed = max(self._min, min(self._max, float(default_mpa)))
+
     def request(self, writer: str, value_mpa: float, priority: int) -> None:
         """登记一路设定点请求（最高优先级 + 最新提交胜出）。"""
 

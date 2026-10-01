@@ -33,6 +33,19 @@ class BufferBaseline:
 
         return self._epoch
 
+    def update_limits(self, target_mpa: float, tolerance_mpa: float, ttl_s: float) -> None:
+        """热更新目标带与有效期，不改变既有标定代际。"""
+
+        if target_mpa <= 0:
+            raise ValueError("基线目标压力必须为正")
+        if tolerance_mpa < 0:
+            raise ValueError("基线压力公差不能为负")
+        if ttl_s <= 0:
+            raise ValueError("基线有效期必须为正")
+        self._target_mpa = float(target_mpa)
+        self._tolerance_mpa = float(tolerance_mpa)
+        self._ttl_s = float(ttl_s)
+
     def calibrate(self, now: float, target_mpa: float) -> float:
         """按当前时刻重新标定基线，返回新的目标压力。"""
 

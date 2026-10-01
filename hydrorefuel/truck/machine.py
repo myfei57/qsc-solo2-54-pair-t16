@@ -32,6 +32,11 @@ class TruckMachine:
     def limits(self) -> TruckLimits:
         return self._limits
 
+    def update_limits(self, limits: TruckLimits) -> None:
+        """热更新槽车限值；运行状态继续沿用新限值判定。"""
+
+        self._limits = limits
+
     @property
     def state(self) -> str:
         return self._state

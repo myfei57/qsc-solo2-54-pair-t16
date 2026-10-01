@@ -27,6 +27,13 @@ class LeakLatch:
     def hold_s(self) -> float:
         return self._hold_s
 
+    def update_hold_s(self, hold_s: float) -> None:
+        """热更新泄漏闩锁保持时长。"""
+
+        if hold_s <= 0:
+            raise ValueError("保持时长必须为正")
+        self._hold_s = float(hold_s)
+
     def engage(self, now: float) -> float:
         """触发闩锁，返回保持到期的时刻。"""
 

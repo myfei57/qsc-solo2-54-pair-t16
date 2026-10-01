@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from ..app import Platform
 from ..audit.timeline import build_timeline
-from ..errors import HydroError
+from ..errors import ConfigError, HydroError
 from .router import Router
 
 
@@ -55,6 +55,8 @@ class Api:
         add("GET", "/api/events", self._events)
         add("GET", "/api/trend", self._trend)
         add("GET", "/api/store", self._store)
+        add("GET", "/api/config", self._get_config)
+        add("POST", "/api/config", self._submit_config)
         add("GET", "/api/timeline", self._timeline)
         add("GET", "/api/journal", self._journal)
         add("POST", "/api/step", self._step)
@@ -86,10 +88,18 @@ class Api:
         merged = {**query, **params}
         try:
             payload = handler(merged, body)
+        except ConfigError as error:
+            # 仅缺少幂等键等无法形成配置决策的请求走错误流水；候选配置非法已在决策中留痕。
+            self._platform.note_error(error)
+            return 400, {"error": type(error).__name__, **error.as_record()}
         except HydroError as error:
             # 控制台拒绝的动作也要留痕，便于巡检区分"谁触发了哪条联锁"。
             self._platform.note_error(error)
             return 409, {"error": type(error).__name__, **error.as_record()}
+        if handler == self._submit_config and payload.get("status") == "invalid":
+            return 400, payload
+        if handler == self._submit_config and payload.get("accepted") is False:
+            return 409, payload
         return 200, payload
 
     def _namespace(self, params: dict, body: dict) -> dict:
@@ -120,6 +130,12 @@ class Api:
             "platform_state_path": store.path_of("platform_state"),
             "platform_state": store.read("platform_state"),
         }
+
+    def _get_config(self, params: dict, body: dict) -> dict:
+        return self._platform.config_snapshot(limit=int(params.get("limit", 50)))
+
+    def _submit_config(self, params: dict, body: dict) -> dict:
+        return self._platform.submit_config_change(body)
 
     def _timeline(self, params: dict, body: dict) -> dict:
         station = params.get("station")

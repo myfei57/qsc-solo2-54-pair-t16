@@ -30,6 +30,11 @@ class Precooler:
     def held_s(self) -> float:
         return self._held_s
 
+    def update_limits(self, limits: CoolLimits) -> None:
+        """热更新预冷限值。"""
+
+        self._limits = limits
+
     def start(self) -> None:
         """启动预冷保持计时。"""
 

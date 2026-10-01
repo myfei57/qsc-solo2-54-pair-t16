@@ -26,6 +26,11 @@ class TemperatureModel:
     def value_c(self) -> float:
         return self._value_c
 
+    def update_limits(self, limits: CoolLimits) -> None:
+        """热更新预冷温度限值。"""
+
+        self._limits = limits
+
     def cool(self, dt: float) -> float:
         """按冷速降温一个步长，返回降温后的温度。"""
 
